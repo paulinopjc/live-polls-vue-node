@@ -5,6 +5,7 @@ const router = createRouter({
   routes: [
     { path: '/', component: () => import('@/views/HomeView.vue') },
     { path: '/login', component: () => import('@/views/LoginView.vue'), meta: { guestOnly: true } },
+    { path: '/auth/callback', component: () => import('@/views/AuthCallbackView.vue') },
     { path: '/polls', component: () => import('@/views/PollListView.vue') },
     { path: '/polls/new', component: () => import('@/views/PollCreateView.vue'), meta: { requiresAuth: true } },
     { path: '/polls/:id', component: () => import('@/views/PollView.vue') },

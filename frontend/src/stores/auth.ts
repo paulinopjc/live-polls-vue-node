@@ -40,6 +40,11 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(USER_KEY)
   }
 
+  function handleOAuthCallback(result: { user: User; token: string }) {
+    error.value = null
+    persist(result)
+  }
+
   async function signInWithGoogle(idToken: string): Promise<boolean> {
     error.value = null
     loading.value = true
@@ -68,6 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isAdmin,
     loadFromStorage,
+    handleOAuthCallback,
     signInWithGoogle,
     logout,
   }

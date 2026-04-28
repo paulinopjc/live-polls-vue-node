@@ -4,6 +4,8 @@ import { authRequired } from '../middleware/authMiddleware'
 
 const router = Router()
 
+router.get('/google', authController.redirect)
+router.get('/google/callback', authController.callback)
 router.post('/google', authController.google)
 router.get('/me', authRequired, authController.me)
 
