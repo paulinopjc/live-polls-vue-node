@@ -29,4 +29,29 @@ export const pollApi = {
     const res = await apiClient.get<PollWithTotalsResponse>(`/polls/${id}`)
     return res.data.data
   },
+
+  // Admin methods
+  async listAll(): Promise<PollWithTotals[]> {
+    const res = await apiClient.get<PollListResponse>('/admin/polls')
+    return res.data.data
+  },
+
+  async approve(id: string): Promise<PollWithTotals> {
+    const res = await apiClient.patch<PollWithTotalsResponse>(`/admin/polls/${id}/approve`)
+    return res.data.data
+  },
+
+  async deny(id: string): Promise<PollWithTotals> {
+    const res = await apiClient.patch<PollWithTotalsResponse>(`/admin/polls/${id}/deny`)
+    return res.data.data
+  },
+
+  async editQuestion(id: string, question: string): Promise<PollWithTotals> {
+    const res = await apiClient.patch<PollWithTotalsResponse>(`/admin/polls/${id}`, { question })
+    return res.data.data
+  },
+
+  async deletePoll(id: string): Promise<void> {
+    await apiClient.delete(`/admin/polls/${id}`)
+  },
 }

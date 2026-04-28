@@ -4,6 +4,7 @@ import type {
   CreatePollInput,
   Poll,
   PollOption,
+  PollStatus,
   PollWithTotals,
   VoteInput,
 } from '../types/poll'
@@ -11,6 +12,8 @@ import type {
 interface PollRow {
   id: string
   question: string
+  status: PollStatus
+  user_id: number | null
   created_at: string
 }
 
@@ -22,13 +25,25 @@ interface OptionRow {
 }
 
 export const pollService = {
+  // Public listing: approved polls only
   async list(): Promise<PollWithTotals[]> {
+    const { rows: pollRows } = await pool.query(
+      "SELECT * FROM polls WHERE status = 'approved' ORDER BY created_at DESC"
+    )
+    return this.buildPollList(pollRows as PollRow[])
+  },
+
+  // Admin listing: all polls regardless of status
+  async listAll(): Promise<PollWithTotals[]> {
     const { rows: pollRows } = await pool.query(
       'SELECT * FROM polls ORDER BY created_at DESC'
     )
+    return this.buildPollList(pollRows as PollRow[])
+  },
 
+  async buildPollList(pollRows: PollRow[]): Promise<PollWithTotals[]> {
     const results: PollWithTotals[] = []
-    for (const row of pollRows as PollRow[]) {
+    for (const row of pollRows) {
       const poll = await this.find(row.id)
       if (poll) {
         const totals = await this.getTotals(row.id, poll.options)
@@ -36,17 +51,20 @@ export const pollService = {
         results.push({ poll, totals, total_votes })
       }
     }
-
     return results
   },
 
-  async create(input: CreatePollInput): Promise<Poll> {
+  async create(input: CreatePollInput, userId?: number): Promise<Poll> {
     const id = generatePollId()
+    const status: PollStatus = userId ? 'pending' : 'approved'
     const client = await pool.connect()
 
     try {
       await client.query('BEGIN')
-      await client.query('INSERT INTO polls (id, question) VALUES ($1, $2)', [id, input.question])
+      await client.query(
+        'INSERT INTO polls (id, question, user_id, status) VALUES ($1, $2, $3, $4)',
+        [id, input.question, userId ?? null, status]
+      )
 
       for (let position = 0; position < input.options.length; position++) {
         await client.query(
@@ -87,6 +105,8 @@ export const pollService = {
       id: pollRow.id,
       question: pollRow.question,
       options,
+      status: pollRow.status,
+      user_id: pollRow.user_id,
       created_at: pollRow.created_at,
     }
   },
@@ -117,9 +137,33 @@ export const pollService = {
     return totals
   },
 
+  async setStatus(id: string, status: PollStatus): Promise<PollWithTotals | undefined> {
+    const result = await pool.query(
+      'UPDATE polls SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    )
+    if (result.rowCount === 0) return undefined
+    return this.findWithTotals(id)
+  },
+
+  async updateQuestion(id: string, question: string): Promise<PollWithTotals | undefined> {
+    const result = await pool.query(
+      'UPDATE polls SET question = $1 WHERE id = $2 RETURNING *',
+      [question, id]
+    )
+    if (result.rowCount === 0) return undefined
+    return this.findWithTotals(id)
+  },
+
+  async deletePoll(id: string): Promise<boolean> {
+    const result = await pool.query('DELETE FROM polls WHERE id = $1', [id])
+    return (result.rowCount ?? 0) > 0
+  },
+
   async recordVote(input: VoteInput): Promise<{ ok: true; totals: Record<number, number>; total_votes: number } | { ok: false; reason: string }> {
     const poll = await this.find(input.pollId)
     if (!poll) return { ok: false, reason: 'Poll not found' }
+    if (poll.status !== 'approved') return { ok: false, reason: 'Poll is not accepting votes' }
 
     const validOption = poll.options.find((o) => o.id === input.optionId)
     if (!validOption) return { ok: false, reason: 'Invalid option' }

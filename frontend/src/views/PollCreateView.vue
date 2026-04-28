@@ -2,7 +2,31 @@
   <div class="max-w-xl">
     <h1 class="text-2xl font-semibold mb-6">New Poll</h1>
 
-    <form @submit.prevent="onSubmit" class="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+    <!-- Success: poll submitted for approval -->
+    <div v-if="submitted" class="bg-green-50 border border-green-200 rounded-lg p-6 space-y-3">
+      <h2 class="text-lg font-medium text-green-800">Poll submitted!</h2>
+      <p class="text-sm text-green-700">
+        Your poll has been submitted for approval. An admin will review it shortly.
+        Once approved, it will appear on the public polls page.
+      </p>
+      <div class="flex gap-3 pt-2">
+        <button
+          @click="resetForm"
+          class="px-5 py-2 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700"
+        >
+          Create Another
+        </button>
+        <router-link
+          to="/polls"
+          class="px-5 py-2 text-sm rounded border border-gray-300 hover:bg-gray-50"
+        >
+          View Polls
+        </router-link>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form v-else @submit.prevent="onSubmit" class="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
       <div v-if="error" class="bg-red-50 border border-red-200 rounded px-3 py-2 text-sm text-red-700">
         {{ error }}
       </div>
@@ -84,6 +108,7 @@ const router = useRouter()
 const question = ref('')
 const options = ref<string[]>(['', ''])
 const saving = ref(false)
+const submitted = ref(false)
 const error = ref<string | null>(null)
 const fieldErrors = ref<Record<string, string>>({})
 
@@ -95,14 +120,22 @@ function removeOption(i: number) {
   options.value.splice(i, 1)
 }
 
+function resetForm() {
+  question.value = ''
+  options.value = ['', '']
+  submitted.value = false
+  error.value = null
+  fieldErrors.value = {}
+}
+
 async function onSubmit() {
   saving.value = true
   error.value = null
   fieldErrors.value = {}
   try {
     const trimmed = options.value.map((o) => o.trim()).filter(Boolean)
-    const poll = await pollApi.create({ question: question.value.trim(), options: trimmed })
-    router.push(`/polls/${poll.id}`)
+    await pollApi.create({ question: question.value.trim(), options: trimmed })
+    submitted.value = true
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string; details?: Record<string, string> } } }
     fieldErrors.value = err.response?.data?.details ?? {}

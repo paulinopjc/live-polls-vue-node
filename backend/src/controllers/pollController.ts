@@ -28,7 +28,8 @@ export const pollController = {
       if (!parsed.success) {
         throw new HttpError(422, 'Validation failed', flattenZodError(parsed.error))
       }
-      const poll = await pollService.create(parsed.data)
+      const userId = req.user?.id
+      const poll = await pollService.create(parsed.data, userId)
       res.status(201).json({ data: poll })
     } catch (e) {
       next(e)

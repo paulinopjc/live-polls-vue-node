@@ -1,3 +1,5 @@
+export type PollStatus = 'pending' | 'approved' | 'denied'
+
 export interface PollOption {
   id: number
   label: string
@@ -8,6 +10,8 @@ export interface Poll {
   id: string
   question: string
   options: PollOption[]
+  status: PollStatus
+  user_id: number | null
   created_at: string
 }
 
