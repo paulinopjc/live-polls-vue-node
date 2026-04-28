@@ -22,6 +22,24 @@ interface OptionRow {
 }
 
 export const pollService = {
+  async list(): Promise<PollWithTotals[]> {
+    const { rows: pollRows } = await pool.query(
+      'SELECT * FROM polls ORDER BY created_at DESC'
+    )
+
+    const results: PollWithTotals[] = []
+    for (const row of pollRows as PollRow[]) {
+      const poll = await this.find(row.id)
+      if (poll) {
+        const totals = await this.getTotals(row.id, poll.options)
+        const total_votes = Object.values(totals).reduce((a, b) => a + b, 0)
+        results.push({ poll, totals, total_votes })
+      }
+    }
+
+    return results
+  },
+
   async create(input: CreatePollInput): Promise<Poll> {
     const id = generatePollId()
     const client = await pool.connect()

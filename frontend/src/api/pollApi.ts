@@ -9,7 +9,17 @@ interface PollWithTotalsResponse {
   data: PollWithTotals
 }
 
+interface PollListResponse {
+  data: PollWithTotals[]
+  count: number
+}
+
 export const pollApi = {
+  async list(): Promise<PollWithTotals[]> {
+    const res = await apiClient.get<PollListResponse>('/polls')
+    return res.data.data
+  },
+
   async create(input: CreatePollInput): Promise<Poll> {
     const res = await apiClient.post<SinglePollResponse>('/polls', input)
     return res.data.data

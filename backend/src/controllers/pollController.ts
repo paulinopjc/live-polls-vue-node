@@ -13,6 +13,15 @@ function flattenZodError(error: import('zod').ZodError): Record<string, string> 
 }
 
 export const pollController = {
+  async list(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const polls = await pollService.list()
+      res.json({ data: polls, count: polls.length })
+    } catch (e) {
+      next(e)
+    }
+  },
+
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const parsed = createPollSchema.safeParse(req.body)

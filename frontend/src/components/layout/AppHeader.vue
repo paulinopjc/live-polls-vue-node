@@ -4,12 +4,20 @@
       <router-link to="/" class="text-xl font-semibold text-gray-900">
         📊 Live Polls
       </router-link>
-      <router-link
-        to="/polls/new"
-        class="text-sm bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-      >
-        New Poll
-      </router-link>
+      <div class="flex items-center gap-3">
+        <router-link
+          to="/polls"
+          class="text-sm text-gray-600 hover:text-gray-900"
+        >
+          All Polls
+        </router-link>
+        <router-link
+          to="/polls/new"
+          class="text-sm bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+        >
+          New Poll
+        </router-link>
+      </div>
     </div>
   </header>
 </template>
